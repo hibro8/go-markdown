@@ -109,6 +109,14 @@ func (s *SettingsService) UpdateLanguage(lang string) error {
 	return s.save()
 }
 
+func (s *SettingsService) SaveWindowState(width, height, x, y int) error {
+	s.settings.WindowWidth = width
+	s.settings.WindowHeight = height
+	s.settings.WindowX = x
+	s.settings.WindowY = y
+	return s.save()
+}
+
 func (s *SettingsService) GetConfigPath() string {
 	return s.configPath
 }

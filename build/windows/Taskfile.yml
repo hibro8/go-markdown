@@ -11,7 +11,7 @@ tasks:
       - task: common:build:frontend
       - task: common:generate:bindings
     cmds:
-      - go build -o {{.BIN_DIR}}/{{.APP_NAME}}.exe
+      - go build -ldflags="-H windowsgui" -o {{.BIN_DIR}}/{{.APP_NAME}}.exe
     env:
       GOOS: windows
       CGO_ENABLED: 0

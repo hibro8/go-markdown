@@ -65,6 +65,12 @@ A cross-platform desktop Markdown reader and editor built with Wails v3, Go, Rea
         └── types/             # TypeScript 类型定义
 ```
 
+## 截图
+
+| | | |
+|---|---|---|
+| ![demo1](demo/demo1.png) | ![demo2](demo/demo2.png) | ![demo3](demo/demo3.png) |
+
 ## 快速开始
 
 **前置要求**: Go 1.23+, Node.js 20+, wails3 CLI

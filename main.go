@@ -9,7 +9,9 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
+	"syscall"
 	"time"
 
 	"go-markdown/pkg/icon"
@@ -25,6 +27,11 @@ import (
 var assets embed.FS
 
 func main() {
+	// Allocate console for CLI flags (exe is built as windowsgui)
+	if runtime.GOOS == "windows" {
+		showConsole()
+	}
+
 	installFlag := flag.Bool("install", false, "Register .md file associations")
 	uninstallFlag := flag.Bool("uninstall", false, "Remove .md file associations")
 	flag.Parse()
@@ -68,6 +75,32 @@ func main() {
 	markdownService := services.NewMarkdownService()
 	dbService := services.NewDBService()
 
+	// Load saved settings to get trayEnabled and window dimensions
+	// before creating the window. We can't wait for ServiceStartup.
+	trayEnabled := false
+	winWidth := 1280
+	winHeight := 800
+	winX := -1
+	winY := -1
+	if configPath, err := settings.ConfigPath(); err == nil {
+		if data, err := os.ReadFile(configPath); err == nil {
+			var saved settings.Settings
+			if json.Unmarshal(data, &saved) == nil {
+				trayEnabled = saved.TrayEnabled
+				if saved.WindowWidth > 0 {
+					winWidth = saved.WindowWidth
+				}
+				if saved.WindowHeight > 0 {
+					winHeight = saved.WindowHeight
+				}
+				if saved.WindowX != 0 || saved.WindowY != 0 {
+					winX = saved.WindowX
+					winY = saved.WindowY
+				}
+			}
+		}
+	}
+
 	app := application.New(application.Options{
 		Name:        "Go Markdown",
 		Description: "A cross-platform Markdown reader",
@@ -87,30 +120,35 @@ func main() {
 	})
 
 	win := app.Window.NewWithOptions(application.WebviewWindowOptions{
-		Name:          "main",
-		Title:         "Go Markdown",
-		Width:         1280,
-		Height:        800,
-		MinWidth:      800,
-		MinHeight:     600,
-		URL:           "/",
-		BackgroundType: application.BackgroundTypeSolid,
-		EnableFileDrop: true,
-		Frameless:     true,
+		Name:                       "main",
+		Title:                      "Go Markdown",
+		Width:                      winWidth,
+		Height:                     winHeight,
+		MinWidth:                   800,
+		MinHeight:                  600,
+		URL:                        "/",
+		BackgroundType:             application.BackgroundTypeSolid,
+		EnableFileDrop:             true,
+		Frameless:                  true,
+		DefaultContextMenuDisabled: true,
 	})
 
-	// Load saved settings to decide whether to create the tray.
-	// We can't wait for ServiceStartup (runs during app.Run), so
-	// we read the config file directly here.
-	trayEnabled := false
-	if configPath, err := settings.ConfigPath(); err == nil {
-		if data, err := os.ReadFile(configPath); err == nil {
-			var saved settings.Settings
-			if json.Unmarshal(data, &saved) == nil {
-				trayEnabled = saved.TrayEnabled
-			}
-		}
+	// Restore saved window position or center on first run
+	if winX != -1 && winY != -1 {
+		win.SetPosition(winX, winY)
+	} else {
+		win.Center()
 	}
+
+	// Persist window dimensions on resize/move
+	win.RegisterHook(events.Common.WindowDidResize, func(e *application.WindowEvent) {
+		x, y := win.Position()
+		settingsService.SaveWindowState(win.Width(), win.Height(), x, y)
+	})
+	win.RegisterHook(events.Common.WindowDidMove, func(e *application.WindowEvent) {
+		x, y := win.Position()
+		settingsService.SaveWindowState(win.Width(), win.Height(), x, y)
+	})
 
 	var tray *application.SystemTray
 	if trayEnabled {
@@ -229,4 +267,22 @@ func createTray(app *application.App, win application.Window) *application.Syste
 
 	tray.AttachWindow(win).WindowOffset(5)
 	return tray
+}
+
+func showConsole() {
+	kernel32 := syscall.NewLazyDLL("kernel32.dll")
+	attachProc := kernel32.NewProc("AttachConsole")
+	// ATTACH_PARENT_PROCESS = 0xFFFFFFFF
+	r, _, _ := attachProc.Call(uintptr(0xFFFFFFFF))
+	if r == 0 {
+		// Not run from a console (e.g. double-clicked), allocate a new one
+		allocProc := kernel32.NewProc("AllocConsole")
+		allocProc.Call()
+	}
+	// Re-open stdout/stderr to the console
+	f, err := os.OpenFile("CONOUT$", os.O_WRONLY, 0)
+	if err == nil {
+		os.Stdout = f
+		os.Stderr = f
+	}
 }

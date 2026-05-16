@@ -21,5 +21,8 @@ pkg/icon/appicon_source.png
 .DS_Store
 Thumbs.db
 
+# Task checksums (build artifacts)
+.task/
+
 # Dependencies
 node_modules/

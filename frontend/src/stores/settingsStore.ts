@@ -14,12 +14,14 @@ interface SettingsState {
   lastOpenFolder: string;
   settingsOpen: boolean;
   loading: boolean;
+  sidebarSplitRatio: number;
   setTheme: (theme: 'light' | 'dark') => void;
   setLanguage: (lang: 'en' | 'zh') => void;
   setTrayEnabled: (enabled: boolean) => void;
   setAutoStart: (enabled: boolean) => void;
   toggleSettingsPanel: () => void;
   setSettings: (settings: AppSettings) => void;
+  setSidebarSplitRatio: (ratio: number) => void;
 }
 
 export const useSettingsStore = create<SettingsState>((set) => ({
@@ -35,6 +37,7 @@ export const useSettingsStore = create<SettingsState>((set) => ({
   lastOpenFolder: '',
   settingsOpen: false,
   loading: false,
+  sidebarSplitRatio: 0.5,
 
   setTheme: (theme: 'light' | 'dark') => set({ theme }),
   setLanguage: (language: 'en' | 'zh') => set({ language }),
@@ -42,4 +45,5 @@ export const useSettingsStore = create<SettingsState>((set) => ({
   setAutoStart: (autoStart: boolean) => set({ autoStart }),
   toggleSettingsPanel: () => set((s) => ({ settingsOpen: !s.settingsOpen })),
   setSettings: (settings: AppSettings) => set({ ...settings, loading: false }),
+  setSidebarSplitRatio: (sidebarSplitRatio: number) => set({ sidebarSplitRatio }),
 }));

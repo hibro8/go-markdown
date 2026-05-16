@@ -10,7 +10,7 @@ A cross-platform desktop Markdown reader and editor built with Wails v3, Go, Rea
 
 - **Chrome 风格多标签页** — 拖拽排序、固定标签、右键菜单（关闭左侧/右侧/其他/全部）
 - **阅读 + 编辑双模式** — 纯净阅读视图 + Monaco Editor 分屏编辑实时预览
-- **可拖拽分割线** — 编辑模式下左右面板比例可调，自动记忆
+- **可拖拽分割线** — 编辑模式左右面板比例可调 + 侧边栏文件夹/文件列表比例可调，自动记忆
 - **滚动位置保持** — 切换阅读/编辑模式时自动保存并恢复滚动位置
 - **左侧文件树** — 打开文件夹递归展示所有 .md 文件，支持新建/删除/重命名
 - **明暗主题** — 手动切换或跟随系统
@@ -18,7 +18,7 @@ A cross-platform desktop Markdown reader and editor built with Wails v3, Go, Rea
 - **系统托盘** — 关闭窗口隐藏到托盘，可设置是否启用
 - **单实例** — 双击 .md 文件自动复用已有窗口
 - **文件关联** — `--install` / `--uninstall` 注册/取消 .md 文件类型关联
-- **状态持久化** — SQLite 自动保存标签页、文件夹、主题、窗口位置等状态
+- **状态持久化** — JSON File 自动保存标签页、文件夹、主题、窗口位置等状态
 
 ## 技术栈
 
@@ -31,7 +31,7 @@ A cross-platform desktop Markdown reader and editor built with Wails v3, Go, Rea
 | UI 组件 | Ant Design 6 |
 | 编辑器 | Monaco Editor |
 | 状态管理 | Zustand |
-| 持久化 | SQLite (pure Go) |
+| 持久化 | JSON File (pure Go) |
 | 构建 | Vite + wails3 build |
 
 ## 项目结构
@@ -43,7 +43,7 @@ A cross-platform desktop Markdown reader and editor built with Wails v3, Go, Rea
 │   ├── file_service.go        # 文件 CRUD、目录遍历、监听
 │   ├── markdown_service.go    # goldmark 解析
 │   ├── settings_service.go    # 持久化设置读写
-│   ├── db_service.go          # SQLite 状态存储
+│   ├── db_service.go          # JSON File 状态存储
 │   └── install_service.go     # 文件关联注册（Windows）
 ├── pkg/
 │   ├── icon/                  # 应用图标（embed markdown.png）

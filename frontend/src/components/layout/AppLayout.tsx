@@ -1,4 +1,4 @@
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Layout } from 'antd';
 import TitleBar from './TitleBar';
 import FolderSection from '../sidebar/FolderSection';
@@ -9,6 +9,7 @@ import EditView from '../reader/EditView';
 import SettingsDrawer from '../settings/SettingsDrawer';
 import { useTabStore } from '../../stores/tabStore';
 import { useFileStore } from '../../stores/fileStore';
+import { useSettingsStore } from '../../stores/settingsStore';
 import { useI18n } from '../../i18n';
 import { FileService, MarkdownService } from '../../services/api';
 import { Events } from '@wailsio/runtime';
@@ -22,8 +23,51 @@ export default function AppLayout() {
   const activeTabId = useTabStore((s) => s.activeTabId);
   const openTab = useTabStore((s) => s.openTab);
   const addFile = useFileStore((s) => s.addFile);
+  const sidebarSplitRatio = useSettingsStore((s) => s.sidebarSplitRatio);
+  const setSidebarSplitRatio = useSettingsStore((s) => s.setSidebarSplitRatio);
+
+  const splitContainerRef = useRef<HTMLDivElement>(null);
+  const dragRef = useRef({ active: false, startY: 0, startRatio: 0.5 });
+  const [dragging, setDragging] = useState(false);
 
   const activeTab = tabs.find((t) => t.id === activeTabId);
+
+  const handleDividerMouseDown = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragRef.current = {
+      active: true,
+      startY: e.clientY,
+      startRatio: useSettingsStore.getState().sidebarSplitRatio,
+    };
+    setDragging(true);
+  }, []);
+
+  const handleSplitMouseMove = useCallback((e: React.MouseEvent) => {
+    if (!dragRef.current.active) return;
+    const { startY, startRatio } = dragRef.current;
+    const containerHeight = splitContainerRef.current?.clientHeight ?? 400;
+    const deltaRatio = (e.clientY - startY) / containerHeight;
+    const newRatio = Math.max(0.15, Math.min(0.85, startRatio + deltaRatio));
+    setSidebarSplitRatio(newRatio);
+  }, []);
+
+  const handleSplitMouseUp = useCallback(() => {
+    if (!dragRef.current.active) return;
+    dragRef.current.active = false;
+    setDragging(false);
+  }, []);
+
+  // Safety net: cancel drag when mouse is released anywhere
+  useEffect(() => {
+    if (!dragging) return;
+    const onWindowMouseUp = () => {
+      dragRef.current.active = false;
+      setDragging(false);
+    };
+    window.addEventListener('mouseup', onWindowMouseUp);
+    return () => window.removeEventListener('mouseup', onWindowMouseUp);
+  }, [dragging]);
 
   const openFileInTab = useCallback(async (filePath: string) => {
     try {
@@ -88,37 +132,92 @@ export default function AppLayout() {
           }}
         >
           {/* Top: Folder section */}
-          <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column', margin: '8px 8px 4px 8px', borderRadius: 8, border: '1px solid var(--md-border)' }}>
-            <FolderSection />
-          </div>
+          <div
+            ref={splitContainerRef}
+            style={{
+              flex: 1,
+              display: 'flex',
+              flexDirection: 'column',
+              overflow: 'hidden',
+              cursor: dragging ? 'row-resize' : undefined,
+              userSelect: dragging ? 'none' : undefined,
+            }}
+            onMouseMove={handleSplitMouseMove}
+            onMouseUp={handleSplitMouseUp}
+            onMouseLeave={handleSplitMouseUp}
+          >
+            <div style={{
+              height: `${sidebarSplitRatio * 100}%`,
+              overflow: 'hidden',
+              display: 'flex',
+              flexDirection: 'column',
+              margin: '8px 8px 4px 8px',
+              borderRadius: 8,
+              border: '1px solid var(--md-border)',
+            }}>
+              <FolderSection />
+            </div>
 
-          {/* Middle: File list section */}
-          <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column', margin: '4px 8px 8px 8px', borderRadius: 8, border: '1px solid var(--md-border)' }}>
+            {/* Draggable divider */}
             <div
               style={{
-                padding: '10px 14px',
-                borderBottom: '1px solid var(--md-border)',
-                background: 'rgba(128,128,128,0.04)',
-                borderRadius: '8px 8px 0 0',
+                height: 6,
+                cursor: 'row-resize',
+                flexShrink: 0,
+                margin: '0 8px',
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'space-between',
+                justifyContent: 'center',
               }}
+              onMouseDown={handleDividerMouseDown}
             >
-              <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--md-text)', letterSpacing: '0.3px' }}>{t('sidebar.files')}</span>
-              <FileAddOutlined
-                style={{ fontSize: 15, cursor: 'pointer', color: 'var(--md-text)', opacity: 0.7, transition: 'opacity 0.15s' }}
-                onMouseEnter={(e) => { e.currentTarget.style.opacity = '1'; }}
-                onMouseLeave={(e) => { e.currentTarget.style.opacity = '0.7'; }}
-                onClick={handleOpenFile}
-                title={t('sidebar.openFile')}
+              <div style={{
+                width: 32,
+                height: 3,
+                borderRadius: 2,
+                background: 'var(--md-border)',
+                transition: 'background 0.15s',
+              }}
+                onMouseEnter={(e) => { e.currentTarget.style.background = '#0969da'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--md-border)'; }}
               />
             </div>
-            <div style={{ flex: 1, overflow: 'auto' }}>
-              <FileList />
+
+            {/* Bottom: File list section */}
+            <div style={{
+              flex: 1,
+              overflow: 'hidden',
+              display: 'flex',
+              flexDirection: 'column',
+              margin: '4px 8px 8px 8px',
+              borderRadius: 8,
+              border: '1px solid var(--md-border)',
+            }}>
+              <div
+                style={{
+                  padding: '10px 14px',
+                  borderBottom: '1px solid var(--md-border)',
+                  background: 'rgba(128,128,128,0.04)',
+                  borderRadius: '8px 8px 0 0',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                }}
+              >
+                <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--md-text)', letterSpacing: '0.3px' }}>{t('sidebar.files')}</span>
+                <FileAddOutlined
+                  style={{ fontSize: 15, cursor: 'pointer', color: 'var(--md-text)', opacity: 0.7, transition: 'opacity 0.15s' }}
+                  onMouseEnter={(e) => { e.currentTarget.style.opacity = '1'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.opacity = '0.7'; }}
+                  onClick={handleOpenFile}
+                  title={t('sidebar.openFile')}
+                />
+              </div>
+              <div style={{ flex: 1, overflow: 'auto' }}>
+                <FileList />
+              </div>
             </div>
           </div>
-
         </Sider>
         <Content
           style={{

@@ -14,7 +14,7 @@ export function usePersistence() {
   const persistAll = useCallback(async () => {
     const { tabs, activeTabId } = useTabStore.getState();
     const { fileList, folderPath, folderTree } = useFileStore.getState();
-    const { theme, language } = useSettingsStore.getState();
+    const { theme, language, sidebarSplitRatio } = useSettingsStore.getState();
 
     const records: TabRecord[] = tabs.map((t, i) => ({
       filePath: t.filePath,
@@ -46,6 +46,7 @@ export function usePersistence() {
           : Promise.resolve(),
         DBService.SaveState('theme', theme),
         DBService.SaveState('language', language),
+        DBService.SaveState('sidebar_split_ratio', String(sidebarSplitRatio)),
       ]);
       console.log('[persist] save complete');
     } catch (e) {
@@ -93,6 +94,17 @@ export function usePersistence() {
         if (state.language) {
           useSettingsStore.getState().setLanguage(state.language as 'en' | 'zh');
         }
+
+        // Restore sidebar split ratio
+        try {
+          const ratioStr = await DBService.GetState('sidebar_split_ratio');
+          if (ratioStr) {
+            const ratio = parseFloat(ratioStr);
+            if (ratio >= 0.15 && ratio <= 0.85) {
+              useSettingsStore.getState().setSidebarSplitRatio(ratio);
+            }
+          }
+        } catch { /* ignore */ }
 
         // trayEnabled / autoStart are only stored in the Go settings file,
         // not in SQLite — always sync them from SettingsService.

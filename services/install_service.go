@@ -1,3 +1,5 @@
+//go:build windows
+
 package services
 
 import (
@@ -5,7 +7,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"runtime"
 	"strings"
 	"syscall"
 
@@ -17,10 +18,6 @@ const progID = "GoMarkdown.md"
 var mdFileExtensions = []string{".md", ".markdown", ".mdown", ".mkd"}
 
 func InstallFileAssociations() error {
-	if runtime.GOOS != "windows" {
-		return fmt.Errorf("file association is only supported on Windows")
-	}
-
 	exePath, err := os.Executable()
 	if err != nil {
 		return fmt.Errorf("get executable path: %w", err)
@@ -91,10 +88,6 @@ func InstallFileAssociations() error {
 }
 
 func UninstallFileAssociations() error {
-	if runtime.GOOS != "windows" {
-		return fmt.Errorf("file association uninstall is only supported on Windows")
-	}
-
 	// Remove extension associations
 	for _, ext := range mdFileExtensions {
 		if err := registry.DeleteKey(registry.CURRENT_USER,

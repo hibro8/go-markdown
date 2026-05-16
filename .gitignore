@@ -1,5 +1,6 @@
 # Build output
 bin/
+release/
 go-markdown.exe
 
 # Generated icon files (source is pkg/icon/markdown.png)

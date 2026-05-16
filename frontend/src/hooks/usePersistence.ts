@@ -1,17 +1,17 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 import { useTabStore } from '../stores/tabStore';
 import { useFileStore } from '../stores/fileStore';
 import { useSettingsStore } from '../stores/settingsStore';
 import { DBService, FileService, MarkdownService, SettingsService } from '../services/api';
 import type { TabRecord } from '@/types';
 
-const DB_DEBOUNCE = 500;
+const DB_DEBOUNCE = 300;
 
 export function usePersistence() {
   const restoring = useRef(false);
-  const saveTimer = useRef<ReturnType<typeof setTimeout>>();
+  const saveTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
 
-  const persistAll = async () => {
+  const persistAll = useCallback(async () => {
     const { tabs, activeTabId } = useTabStore.getState();
     const { fileList, folderPath, folderTree } = useFileStore.getState();
     const { theme, language } = useSettingsStore.getState();
@@ -24,6 +24,15 @@ export function usePersistence() {
       pinned: t.pinned,
       tabOrder: i,
     }));
+
+    console.log('[persist] saving:', {
+      tabCount: records.length,
+      activeTabId,
+      fileListLen: fileList.length,
+      folderPath,
+      theme,
+      language,
+    });
 
     try {
       await Promise.all([
@@ -38,27 +47,37 @@ export function usePersistence() {
         DBService.SaveState('theme', theme),
         DBService.SaveState('language', language),
       ]);
+      console.log('[persist] save complete');
     } catch (e) {
-      console.error('persistAll failed:', e);
+      console.error('[persist] save failed:', e);
     }
-  };
+  }, []);
 
-  const schedulePersist = () => {
+  const schedulePersist = useCallback(() => {
+    if (restoring.current) return;
     if (saveTimer.current) clearTimeout(saveTimer.current);
     saveTimer.current = setTimeout(() => {
-      if (restoring.current) return;
       persistAll();
     }, DB_DEBOUNCE);
-  };
+  }, [persistAll]);
+
+  // Force-sync persist on unload (no debounce)
+  useEffect(() => {
+    const onUnload = () => persistAll();
+    window.addEventListener('beforeunload', onUnload);
+    return () => window.removeEventListener('beforeunload', onUnload);
+  }, [persistAll]);
 
   // --- LOAD state from DB on mount ---
   useEffect(() => {
     (async () => {
       restoring.current = true;
       try {
+        console.log('[persist] loading app state...');
         const state = await DBService.LoadAppState();
+        console.log('[persist] loaded:', state);
         if (!state) {
-          // DB empty — try loading settings from SettingsService as fallback
+          console.log('[persist] DB empty, trying SettingsService...');
           try {
             const settings = await SettingsService.Load();
             if (settings) {
@@ -68,7 +87,6 @@ export function usePersistence() {
           return;
         }
 
-        // Restore theme & language (DB takes priority)
         if (state.theme) {
           useSettingsStore.getState().setTheme(state.theme as 'light' | 'dark');
         }
@@ -76,8 +94,9 @@ export function usePersistence() {
           useSettingsStore.getState().setLanguage(state.language as 'en' | 'zh');
         }
 
-        // If DB had no theme/lang, fall back to SettingsService
-        if (!state.theme || !state.language) {
+        // trayEnabled / autoStart are only stored in the Go settings file,
+        // not in SQLite — always sync them from SettingsService.
+        {
           try {
             const settings = await SettingsService.Load();
             if (settings) {
@@ -87,16 +106,20 @@ export function usePersistence() {
               if (!state.language && settings.language) {
                 useSettingsStore.getState().setLanguage(settings.language);
               }
+              if (settings.trayEnabled !== undefined) {
+                useSettingsStore.getState().setTrayEnabled(settings.trayEnabled);
+              }
+              if (settings.autoStart !== undefined) {
+                useSettingsStore.getState().setAutoStart(settings.autoStart);
+              }
             }
           } catch { /* */ }
         }
 
-        // Restore file list
         if (state.fileList?.length) {
           useFileStore.getState().setFileList(state.fileList);
         }
 
-        // Restore folder
         if (state.folderPath) {
           try {
             const tree = JSON.parse(state.folderTree || '[]');
@@ -104,8 +127,8 @@ export function usePersistence() {
           } catch { /* ignore corrupt tree */ }
         }
 
-        // Restore tabs — re-read file content and re-parse
         if (state.tabs?.length) {
+          console.log('[persist] restoring tabs:', state.tabs.length);
           for (const tr of state.tabs) {
             try {
               const info = await FileService.GetFileInfo(tr.filePath);
@@ -122,6 +145,7 @@ export function usePersistence() {
                 isDirty: false,
                 metadata: result?.metadata ?? {},
                 pinned: tr.pinned,
+                scrollPosition: 0,
               });
             } catch {
               // File gone or unreadable — skip
@@ -129,12 +153,12 @@ export function usePersistence() {
           }
         }
 
-        // Restore active tab
-        if (state.activeTabID) {
-          useTabStore.getState().setActiveTab(state.activeTabID);
+        if (state.activeTabId) {
+          useTabStore.getState().setActiveTab(state.activeTabId);
         }
+        console.log('[persist] restore complete');
       } catch (e) {
-        console.error('Failed to load app state:', e);
+        console.error('[persist] load failed:', e);
       } finally {
         restoring.current = false;
       }
@@ -145,18 +169,20 @@ export function usePersistence() {
     };
   }, []);
 
-  // --- PERSIST: subscribe to all stores, save everything on any change ---
+  // --- PERSIST: subscribe to all stores ---
   useEffect(() => {
+    console.log('[persist] setting up subscriptions');
+
     const unsubTab = useTabStore.subscribe(() => {
-      if (restoring.current) return;
+      console.log('[persist] tabStore changed');
       schedulePersist();
     });
     const unsubFile = useFileStore.subscribe(() => {
-      if (restoring.current) return;
+      console.log('[persist] fileStore changed');
       schedulePersist();
     });
     const unsubSettings = useSettingsStore.subscribe(() => {
-      if (restoring.current) return;
+      console.log('[persist] settingsStore changed');
       schedulePersist();
     });
 
@@ -166,14 +192,14 @@ export function usePersistence() {
       unsubSettings();
       if (saveTimer.current) clearTimeout(saveTimer.current);
     };
-  }, []);
+  }, [schedulePersist]);
 }
 
 export async function clearAllCache() {
   try {
     await DBService.ClearAll();
   } catch (e) {
-    console.error('clearAllCache failed:', e);
+    console.error('[persist] clearAllCache failed:', e);
   }
   useTabStore.getState().closeAllTabs();
   useFileStore.getState().clearFolder();

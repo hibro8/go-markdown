@@ -9,7 +9,7 @@ const { Text } = Typography;
 
 export default function SettingsDrawer() {
   const { t, setLocale } = useI18n();
-  const { message, modal } = App.useApp();
+  const { modal, message } = App.useApp();
   const settingsOpen = useSettingsStore((s) => s.settingsOpen);
   const toggleSettingsPanel = useSettingsStore((s) => s.toggleSettingsPanel);
   const theme = useSettingsStore((s) => s.theme);
@@ -24,24 +24,24 @@ export default function SettingsDrawer() {
   const handleThemeChange = async (checked: boolean) => {
     const newTheme = checked ? 'dark' : 'light';
     setTheme(newTheme);
-    try { await SettingsService.UpdateTheme(newTheme); } catch { /* */ }
+    try { await SettingsService.UpdateTheme(newTheme); message.success(t('settings.saved')); } catch { /* */ }
   };
 
   const handleTrayChange = async (checked: boolean) => {
     setTrayEnabled(checked);
-    try { await SettingsService.UpdateTrayEnabled(checked); } catch { /* */ }
+    try { await SettingsService.UpdateTrayEnabled(checked); message.success(t('settings.saved')); } catch { /* */ }
   };
 
   const handleAutoStartChange = async (checked: boolean) => {
     setAutoStart(checked);
-    try { await SettingsService.UpdateAutoStart(checked); } catch { /* */ }
+    try { await SettingsService.UpdateAutoStart(checked); message.success(t('settings.saved')); } catch { /* */ }
   };
 
   const handleLanguageChange = async (val: string) => {
     const lang = val as 'en' | 'zh';
     setLanguage(lang);
     setLocale(lang);
-    try { await SettingsService.UpdateLanguage(lang); } catch { /* */ }
+    try { await SettingsService.UpdateLanguage(lang); message.success(t('settings.saved')); } catch { /* */ }
   };
 
   return (

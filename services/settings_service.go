@@ -1,15 +1,21 @@
 package services
 
 import (
+	"context"
 	"encoding/json"
+	"fmt"
 	"os"
+	"os/exec"
+	"runtime"
 
+	"github.com/wailsapp/wails/v3/pkg/application"
 	"go-markdown/pkg/settings"
 )
 
 type SettingsService struct {
-	settings   *settings.Settings
-	configPath string
+	settings     *settings.Settings
+	configPath   string
+	onTrayToggle func(enabled bool)
 }
 
 func NewSettingsService() *SettingsService {
@@ -25,7 +31,7 @@ func (s *SettingsService) ServiceName() string {
 	return "SettingsService"
 }
 
-func (s *SettingsService) ServiceStartup() error {
+func (s *SettingsService) ServiceStartup(ctx context.Context, options application.ServiceOptions) error {
 	path, err := settings.ConfigPath()
 	if err != nil {
 		return err
@@ -56,14 +62,46 @@ func (s *SettingsService) UpdateTheme(theme string) error {
 	return s.save()
 }
 
+func (s *SettingsService) OnTrayToggle(fn func(enabled bool)) {
+	s.onTrayToggle = fn
+}
+
 func (s *SettingsService) UpdateTrayEnabled(enabled bool) error {
 	s.settings.TrayEnabled = enabled
-	return s.save()
+	if err := s.save(); err != nil {
+		return err
+	}
+	if s.onTrayToggle != nil {
+		s.onTrayToggle(enabled)
+	}
+	return nil
 }
 
 func (s *SettingsService) UpdateAutoStart(enabled bool) error {
 	s.settings.AutoStart = enabled
-	return s.save()
+	if err := s.save(); err != nil {
+		return err
+	}
+	return s.applyAutoStart(enabled)
+}
+
+func (s *SettingsService) applyAutoStart(enabled bool) error {
+	if runtime.GOOS != "windows" {
+		return nil
+	}
+	exePath, err := os.Executable()
+	if err != nil {
+		return fmt.Errorf("get executable path: %w", err)
+	}
+	key := `HKCU\Software\Microsoft\Windows\CurrentVersion\Run`
+	valName := "GoMarkdown"
+	if enabled {
+		cmd := exec.Command("reg", "add", key, "/v", valName, "/t", "REG_SZ", "/d", exePath, "/f")
+		return cmd.Run()
+	} else {
+		cmd := exec.Command("reg", "delete", key, "/v", valName, "/f")
+		return cmd.Run()
+	}
 }
 
 func (s *SettingsService) UpdateLanguage(lang string) error {

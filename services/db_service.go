@@ -1,12 +1,14 @@
 package services
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
 	"os"
 	"path/filepath"
 	"sync"
 
+	"github.com/wailsapp/wails/v3/pkg/application"
 	_ "modernc.org/sqlite"
 )
 
@@ -45,7 +47,7 @@ func (d *DBService) dbDir() (string, error) {
 	return configDir, nil
 }
 
-func (d *DBService) ServiceStartup() error {
+func (d *DBService) ServiceStartup(ctx context.Context, options application.ServiceOptions) error {
 	dir, err := d.dbDir()
 	if err != nil {
 		return err
@@ -57,6 +59,15 @@ func (d *DBService) ServiceStartup() error {
 	}
 	d.db.SetMaxOpenConns(1) // SQLite works best with single writer
 	return d.migrate()
+}
+
+func (d *DBService) ServiceShutdown() error {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	if d.db != nil {
+		return d.db.Close()
+	}
+	return nil
 }
 
 func (d *DBService) migrate() error {

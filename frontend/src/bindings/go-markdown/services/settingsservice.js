@@ -27,6 +27,14 @@ export function Load() {
 }
 
 /**
+ * @param {any} fn
+ * @returns {$CancellablePromise<void>}
+ */
+export function OnTrayToggle(fn) {
+    return $Call.ByID(744262157, fn);
+}
+
+/**
  * @param {settings$0.Settings | null} updated
  * @returns {$CancellablePromise<void>}
  */

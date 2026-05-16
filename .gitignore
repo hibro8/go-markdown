@@ -1,0 +1,25 @@
+# Build output
+bin/
+go-markdown.exe
+
+# Generated icon files (source is pkg/icon/markdown.png)
+appicon.png
+appicon.ico
+*.syso_tmp
+
+# Test artifacts
+pkg/icon/*_test.png
+pkg/icon/appicon_source.png
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Dependencies
+node_modules/

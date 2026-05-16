@@ -64,6 +64,7 @@ export default function FileList() {
           isDirty: false,
           metadata: result?.metadata ?? {},
           pinned: false,
+          scrollPosition: 0,
         });
       } catch {
         setMissingFiles((prev) => new Set(prev).add(filePath));

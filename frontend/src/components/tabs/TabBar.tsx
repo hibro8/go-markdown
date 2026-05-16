@@ -144,10 +144,10 @@ export default function TabBar() {
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                padding: isPinned ? '0 10px' : '0 12px',
+                padding: '0 10px',
                 height: '100%',
-                minWidth: isPinned ? 40 : 100,
-                maxWidth: isPinned ? 40 : 200,
+                minWidth: isPinned ? 52 : 100,
+                maxWidth: isPinned ? 160 : 200,
                 cursor: 'pointer',
                 fontSize: 13,
                 color: isActive ? 'var(--md-link)' : 'var(--md-text)',
@@ -155,15 +155,27 @@ export default function TabBar() {
                 borderRight: '1px solid var(--md-border)',
                 borderBottom: isActive ? '2px solid var(--md-link)' : 'none',
                 userSelect: 'none',
-                gap: 6,
+                gap: 4,
                 flexShrink: 0,
                 transition: 'background 0.1s',
               }}
             >
               {isPinned ? (
-                <PushpinFilled
-                  style={{ fontSize: 13, color: 'var(--md-link)', flexShrink: 0 }}
-                />
+                <>
+                  <PushpinFilled
+                    style={{ fontSize: 12, color: 'var(--md-link)', flexShrink: 0 }}
+                  />
+                  <span
+                    style={{
+                      flex: 1,
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    {tab.fileName}
+                  </span>
+                </>
               ) : (
                 <>
                   <span

@@ -5,10 +5,12 @@ import { useSettingsStore } from '../../stores/settingsStore';
 import { useI18n } from '../../i18n';
 import { CloseOutlined, SaveOutlined, CheckCircleOutlined, LoadingOutlined } from '@ant-design/icons';
 import MarkdownPreview from '../preview/MarkdownPreview';
-import { MarkdownService, FileService } from '../../services/api';
+import { MarkdownService, FileService, DBService } from '../../services/api';
 import type { editor } from 'monaco-editor';
 
 const MonacoEditor = lazy(() => import('@monaco-editor/react'));
+const MIN_PANEL_WIDTH = 300;
+const SPLIT_STATE_KEY = 'edit_split_ratio';
 
 export default function EditView() {
   const { t } = useI18n();
@@ -29,11 +31,96 @@ export default function EditView() {
   const previewRef = useRef<HTMLDivElement | null>(null);
   const syncingRef = useRef(false);
 
+  // Resizable split — ratio-based so panels scale with window resize
+  const splitContainerRef = useRef<HTMLDivElement | null>(null);
+  const draggingRef = useRef(false);
+  const [splitRatio, setSplitRatio] = useState(0.5);
+  const splitRatioRef = useRef(splitRatio);
+  splitRatioRef.current = splitRatio;
+  const [containerWidth, setContainerWidth] = useState(0);
+
+  // Track container size for ratio → px conversion
+  useEffect(() => {
+    const el = splitContainerRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(([entry]) => {
+      setContainerWidth(entry.contentRect.width);
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  const minRatio = containerWidth > 0 ? MIN_PANEL_WIDTH / containerWidth : 0;
+  const maxRatio = containerWidth > 0 ? 1 - MIN_PANEL_WIDTH / containerWidth : 1;
+  const clampedRatio = Math.max(minRatio, Math.min(maxRatio, splitRatio));
+  const leftPx = containerWidth > 0 ? Math.round(clampedRatio * containerWidth) : 0;
+
+  // Restore saved split ratio
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const saved = await DBService.GetState(SPLIT_STATE_KEY);
+        if (!cancelled && saved) {
+          const ratio = Number(saved);
+          if (!isNaN(ratio) && ratio > 0 && ratio < 1) {
+            setSplitRatio(ratio);
+          }
+        }
+      } catch { /* */ }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  const persistSplit = useCallback(() => {
+    DBService.SaveState(SPLIT_STATE_KEY, String(splitRatioRef.current)).catch(() => {});
+  }, []);
+
+  const handleSplitMouseDown = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    draggingRef.current = true;
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+  }, []);
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!draggingRef.current || !splitContainerRef.current) return;
+      const rect = splitContainerRef.current.getBoundingClientRect();
+      const ratio = (e.clientX - rect.left) / rect.width;
+      setSplitRatio(ratio);
+    };
+    const handleMouseUp = () => {
+      if (!draggingRef.current) return;
+      draggingRef.current = false;
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+      persistSplit();
+    };
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [persistSplit]);
+
   useEffect(() => {
     if (tab) {
       setContent(tab.markdown);
       setPreviewHtml(tab.html);
     }
+  }, [tab?.id]);
+
+  // Restore preview scroll position when entering edit mode
+  useEffect(() => {
+    if (!tab?.scrollPosition) return;
+    const frame = requestAnimationFrame(() => {
+      if (previewRef.current) {
+        previewRef.current.scrollTop = tab.scrollPosition!;
+      }
+    });
+    return () => cancelAnimationFrame(frame);
   }, [tab?.id]);
 
   const handleEditorMount = useCallback((editor: editor.IStandaloneCodeEditor) => {
@@ -85,6 +172,14 @@ export default function EditView() {
     [tab, updateTabContent]
   );
 
+  // Save preview scroll position and switch to reading mode
+  const closeEditor = useCallback(() => {
+    if (previewRef.current) {
+      updateTabContent(tab!.id, { scrollPosition: previewRef.current.scrollTop });
+    }
+    setTabMode(tab!.id, 'reading');
+  }, [tab, updateTabContent, setTabMode]);
+
   const handleSave = useCallback(async () => {
     if (!tab) return;
     try {
@@ -102,11 +197,11 @@ export default function EditView() {
       await FileService.SaveFile(tab.filePath, content);
       updateTabContent(tab.id, { isDirty: false, markdown: content, html: previewHtml });
       message.success(t('reader.saveSuccess'));
-      setTabMode(tab.id, 'reading');
+      closeEditor();
     } catch {
       message.error(t('reader.saveFailed'));
     }
-  }, [tab, content, previewHtml, updateTabContent, setTabMode, message, t]);
+  }, [tab, content, previewHtml, updateTabContent, closeEditor, message, t]);
 
   if (!tab) return null;
 
@@ -151,13 +246,13 @@ export default function EditView() {
           />
           <CloseOutlined
             style={{ fontSize: 16, cursor: 'pointer', color: 'var(--md-text)' }}
-            onClick={() => setTabMode(tab.id, 'reading')}
+            onClick={closeEditor}
             title={t('reader.closeEditor')}
           />
         </div>
       </div>
-      <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
-        <div style={{ flex: 1, borderRight: '1px solid var(--md-border)' }}>
+      <div ref={splitContainerRef} style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
+        <div style={{ width: leftPx, minWidth: 0, flexShrink: 0 }}>
           <Suspense
             fallback={
               <div
@@ -183,7 +278,27 @@ export default function EditView() {
             />
           </Suspense>
         </div>
-        <div style={{ flex: 1 }}>
+        <div
+          onMouseDown={handleSplitMouseDown}
+          style={{
+            width: 4,
+            cursor: 'col-resize',
+            background: 'var(--md-border)',
+            flexShrink: 0,
+            transition: draggingRef.current ? 'none' : 'background 0.15s',
+          }}
+          onMouseEnter={(e) => {
+            if (!draggingRef.current) {
+              e.currentTarget.style.background = 'var(--md-link)';
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (!draggingRef.current) {
+              e.currentTarget.style.background = 'var(--md-border)';
+            }
+          }}
+        />
+        <div style={{ flex: 1, minWidth: 0 }}>
           <MarkdownPreview ref={previewRef} html={previewHtml} onScroll={handlePreviewScroll} />
         </div>
       </div>

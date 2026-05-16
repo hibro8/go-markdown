@@ -26,6 +26,7 @@ export interface TabData {
   isDirty: boolean;
   metadata: Record<string, unknown>;
   pinned: boolean;
+  scrollPosition: number;
 }
 
 export interface ParseResult {

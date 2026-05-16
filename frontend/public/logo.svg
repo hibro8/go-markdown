@@ -1,5 +1,28 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
-  <rect width="32" height="32" rx="6" fill="#0969da"/>
-  <text x="3" y="23" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="white">M</text>
-  <path d="M21 8l-6 16-3-10-2 4H4" stroke="rgba(255,255,255,0.5)" stroke-width="2" stroke-linecap="round" fill="none"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0969da"/>
+      <stop offset="100%" stop-color="#0550ae"/>
+    </linearGradient>
+    <linearGradient id="arrow" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="rgba(255,255,255,0.95)"/>
+      <stop offset="100%" stop-color="rgba(255,255,255,0.7)"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background rounded square -->
+  <rect x="8" y="8" width="240" height="240" rx="48" fill="url(#bg)"/>
+
+  <!-- Down arrow (Markdown symbol) -->
+  <g transform="translate(56, 70)">
+    <path d="M16 0 L128 64 L16 128" stroke="url(#arrow)" stroke-width="22" stroke-linejoin="round" stroke-linecap="round" fill="none"/>
+  </g>
+
+  <!-- Hash symbol for heading -->
+  <g transform="translate(180, 55)">
+    <text font-family="'Segoe UI', Arial, sans-serif" font-size="72" font-weight="900" fill="rgba(255,255,255,0.9)" text-anchor="middle">#</text>
+  </g>
+
+  <!-- Lower decorative line -->
+  <line x1="60" y1="195" x2="196" y2="195" stroke="rgba(255,255,255,0.2)" stroke-width="4" stroke-linecap="round"/>
 </svg>

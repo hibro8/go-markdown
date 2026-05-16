@@ -86,6 +86,7 @@ export default function FolderSection() {
           isDirty: false,
           metadata: result?.metadata ?? {},
           pinned: false,
+          scrollPosition: 0,
         });
       }
     } catch {
@@ -113,6 +114,7 @@ export default function FolderSection() {
           isDirty: false,
           metadata: result?.metadata ?? {},
           pinned: false,
+          scrollPosition: 0,
         });
       } catch {
         console.warn('Failed to open file from folder');

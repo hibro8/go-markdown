@@ -1,16 +1,19 @@
 package services
 
 import (
+	"context"
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/wailsapp/wails/v3/pkg/application"
 )
 
 func TestSettingsServiceDefaults(t *testing.T) {
 	svc := NewSettingsService()
 	// Clean up any persisted settings so we test true defaults
 	os.Remove(svc.GetConfigPath())
-	err := svc.ServiceStartup()
+	err := svc.ServiceStartup(context.Background(), application.ServiceOptions{})
 	if err != nil {
 		t.Fatalf("ServiceStartup failed: %v", err)
 	}
@@ -36,7 +39,7 @@ func TestSettingsServiceDefaults(t *testing.T) {
 func TestSettingsServiceSaveLoad(t *testing.T) {
 	svc := NewSettingsService()
 	os.Remove(svc.GetConfigPath())
-	err := svc.ServiceStartup()
+	err := svc.ServiceStartup(context.Background(), application.ServiceOptions{})
 	if err != nil {
 		t.Fatalf("ServiceStartup failed: %v", err)
 	}
@@ -66,7 +69,7 @@ func TestSettingsServiceSaveLoad(t *testing.T) {
 
 func TestSettingsServiceGetConfigPath(t *testing.T) {
 	svc := NewSettingsService()
-	_ = svc.ServiceStartup()
+	_ = svc.ServiceStartup(context.Background(), application.ServiceOptions{})
 	path := svc.GetConfigPath()
 	if path == "" {
 		t.Error("Expected non-empty config path")

@@ -42,6 +42,7 @@ export default function AppLayout() {
         isDirty: false,
         metadata: result?.metadata ?? {},
         pinned: false,
+        scrollPosition: 0,
       });
     } catch {
       console.warn('Failed to open file:', filePath);

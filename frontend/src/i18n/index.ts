@@ -51,6 +51,7 @@ const en: Messages = {
   'settings.clearCache.desc': 'Delete all stored data and restart',
   'settings.clearCache.confirm': 'This will delete all data and restart the app. Continue?',
   'settings.clearCache.success': 'Cache cleared. Restarting...',
+  'settings.saved': 'Settings saved',
 };
 
 const zh: Messages = {
@@ -100,6 +101,7 @@ const zh: Messages = {
   'settings.clearCache.desc': '删除所有存储数据并重启',
   'settings.clearCache.confirm': '将删除所有数据并重启应用，确定继续？',
   'settings.clearCache.success': '缓存已清除，正在重启...',
+  'settings.saved': '设置已保存',
 };
 
 const messages: Record<Locale, Messages> = { en, zh };

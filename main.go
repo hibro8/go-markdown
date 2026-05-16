@@ -27,14 +27,16 @@ import (
 var assets embed.FS
 
 func main() {
-	// Allocate console for CLI flags (exe is built as windowsgui)
-	if runtime.GOOS == "windows" {
-		showConsole()
-	}
-
 	installFlag := flag.Bool("install", false, "Register .md file associations")
 	uninstallFlag := flag.Bool("uninstall", false, "Remove .md file associations")
 	flag.Parse()
+
+	if *installFlag || *uninstallFlag {
+		// CLI mode: need console for output (exe is built as windowsgui)
+		if runtime.GOOS == "windows" {
+			showConsole()
+		}
+	}
 
 	if *installFlag {
 		fmt.Println("Go Markdown — Registering file associations...")

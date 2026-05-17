@@ -5,6 +5,7 @@ import { useSettingsStore } from '../../stores/settingsStore';
 import { useI18n } from '../../i18n';
 import { CloseOutlined, SaveOutlined, CheckCircleOutlined, LoadingOutlined } from '@ant-design/icons';
 import MarkdownPreview from '../preview/MarkdownPreview';
+import MarkdownToolbar from './MarkdownToolbar';
 import { MarkdownService, FileService, DBService } from '../../services/api';
 import type { editor } from 'monaco-editor';
 
@@ -251,6 +252,7 @@ export default function EditView() {
           />
         </div>
       </div>
+      <MarkdownToolbar editorRef={editorRef} />
       <div ref={splitContainerRef} style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
         <div style={{ width: leftPx, minWidth: 0, flexShrink: 0 }}>
           <Suspense

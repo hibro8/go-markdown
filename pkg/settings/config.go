@@ -6,7 +6,7 @@ import (
 )
 
 type Settings struct {
-	Theme          string        `json:"theme"`          // "light" | "dark"
+	Theme          string        `json:"theme"`          // theme key, e.g. "light", "dark", "dracula", "nord", etc.
 	Language       string        `json:"language"`       // "en" | "zh"
 	TrayEnabled    bool          `json:"trayEnabled"`    // minimize to tray on close
 	AutoStart      bool          `json:"autoStart"`      // launch on system startup

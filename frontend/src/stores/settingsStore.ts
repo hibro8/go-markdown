@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import type { AppSettings } from '@/types';
 
 interface SettingsState {
-  theme: 'light' | 'dark';
+  theme: string;
   language: 'en' | 'zh';
   trayEnabled: boolean;
   autoStart: boolean;
@@ -15,7 +15,7 @@ interface SettingsState {
   settingsOpen: boolean;
   loading: boolean;
   sidebarSplitRatio: number;
-  setTheme: (theme: 'light' | 'dark') => void;
+  setTheme: (theme: string) => void;
   setLanguage: (lang: 'en' | 'zh') => void;
   setTrayEnabled: (enabled: boolean) => void;
   setAutoStart: (enabled: boolean) => void;
@@ -39,7 +39,7 @@ export const useSettingsStore = create<SettingsState>((set) => ({
   loading: false,
   sidebarSplitRatio: 0.5,
 
-  setTheme: (theme: 'light' | 'dark') => set({ theme }),
+  setTheme: (theme: string) => set({ theme }),
   setLanguage: (language: 'en' | 'zh') => set({ language }),
   setTrayEnabled: (trayEnabled: boolean) => set({ trayEnabled }),
   setAutoStart: (autoStart: boolean) => set({ autoStart }),

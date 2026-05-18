@@ -28,6 +28,96 @@
   --md-hr: #30363d;
 }
 
+[data-theme='solarized-light'] {
+  --md-bg: #fdf6e3;
+  --md-text: #586e75;
+  --md-border: #93a1a1;
+  --md-code-bg: #eee8d5;
+  --md-heading: #586e75;
+  --md-link: #268bd2;
+  --md-blockquote-border: #268bd2;
+  --md-blockquote-bg: #eee8d5;
+  --md-table-border: #93a1a1;
+  --md-table-header-bg: #eee8d5;
+  --md-table-stripe: #fdf6e3;
+  --md-hr: #93a1a1;
+}
+
+[data-theme='solarized-dark'] {
+  --md-bg: #002b36;
+  --md-text: #839496;
+  --md-border: #586e75;
+  --md-code-bg: #073642;
+  --md-heading: #839496;
+  --md-link: #268bd2;
+  --md-blockquote-border: #268bd2;
+  --md-blockquote-bg: #073642;
+  --md-table-border: #586e75;
+  --md-table-header-bg: #073642;
+  --md-table-stripe: #002b36;
+  --md-hr: #586e75;
+}
+
+[data-theme='dracula'] {
+  --md-bg: #282a36;
+  --md-text: #f8f8f2;
+  --md-border: #44475a;
+  --md-code-bg: #383a46;
+  --md-heading: #f8f8f2;
+  --md-link: #bd93f9;
+  --md-blockquote-border: #bd93f9;
+  --md-blockquote-bg: #383a46;
+  --md-table-border: #44475a;
+  --md-table-header-bg: #383a46;
+  --md-table-stripe: #282a36;
+  --md-hr: #44475a;
+}
+
+[data-theme='nord'] {
+  --md-bg: #2e3440;
+  --md-text: #d8dee9;
+  --md-border: #4c566a;
+  --md-code-bg: #3b4252;
+  --md-heading: #d8dee9;
+  --md-link: #88c0d0;
+  --md-blockquote-border: #88c0d0;
+  --md-blockquote-bg: #3b4252;
+  --md-table-border: #4c566a;
+  --md-table-header-bg: #3b4252;
+  --md-table-stripe: #2e3440;
+  --md-hr: #4c566a;
+}
+
+[data-theme='one-dark'] {
+  --md-bg: #282c34;
+  --md-text: #abb2bf;
+  --md-border: #3e4451;
+  --md-code-bg: #31353f;
+  --md-heading: #abb2bf;
+  --md-link: #61afef;
+  --md-blockquote-border: #61afef;
+  --md-blockquote-bg: #31353f;
+  --md-table-border: #3e4451;
+  --md-table-header-bg: #31353f;
+  --md-table-stripe: #282c34;
+  --md-hr: #3e4451;
+}
+
+[data-theme='monokai'] {
+  --md-bg: #272822;
+  --md-text: #f8f8f2;
+  --md-border: #49483e;
+  --md-code-bg: #32312c;
+  --md-heading: #f8f8f2;
+  --md-link: #a6e22e;
+  --md-blockquote-border: #a6e22e;
+  --md-blockquote-bg: #32312c;
+  --md-table-border: #49483e;
+  --md-table-header-bg: #32312c;
+  --md-table-stripe: #272822;
+  --md-hr: #49483e;
+}
+
 * {
   margin: 0;
   padding: 0;

@@ -35,7 +35,7 @@ export interface ParseResult {
 }
 
 export interface AppSettings {
-  theme: 'light' | 'dark';
+  theme: string;
   language: 'en' | 'zh';
   trayEnabled: boolean;
   autoStart: boolean;

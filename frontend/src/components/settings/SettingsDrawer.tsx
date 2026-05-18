@@ -1,9 +1,10 @@
-import { Drawer, Switch, Typography, Divider, Segmented, Button, App } from 'antd';
+import { Drawer, Switch, Typography, Divider, Segmented, Button, App, Select } from 'antd';
 import { BulbOutlined, DeleteOutlined } from '@ant-design/icons';
 import { useSettingsStore } from '../../stores/settingsStore';
 import { useI18n } from '../../i18n';
 import { SettingsService } from '../../services/api';
 import { clearAllCache } from '../../hooks/usePersistence';
+import { THEME_OPTIONS } from '../../themes';
 
 const { Text } = Typography;
 
@@ -21,8 +22,7 @@ export default function SettingsDrawer() {
   const autoStart = useSettingsStore((s) => s.autoStart);
   const setAutoStart = useSettingsStore((s) => s.setAutoStart);
 
-  const handleThemeChange = async (checked: boolean) => {
-    const newTheme = checked ? 'dark' : 'light';
+  const handleThemeChange = async (newTheme: string) => {
     setTheme(newTheme);
     try { await SettingsService.UpdateTheme(newTheme); message.success(t('settings.saved')); } catch { /* */ }
   };
@@ -55,9 +55,18 @@ export default function SettingsDrawer() {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
         <div>
           <BulbOutlined style={{ marginRight: 8 }} />
-          <Text>{t('settings.darkMode')}</Text>
+          <Text>{t('settings.theme')}</Text>
         </div>
-        <Switch checked={theme === 'dark'} onChange={handleThemeChange} />
+        <Select
+          size="small"
+          value={theme}
+          onChange={handleThemeChange}
+          style={{ width: 140 }}
+          options={THEME_OPTIONS.map((opt) => ({
+            value: opt.key,
+            label: t(opt.i18nKey),
+          }))}
+        />
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>

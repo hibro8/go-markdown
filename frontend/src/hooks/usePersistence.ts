@@ -89,7 +89,7 @@ export function usePersistence() {
         }
 
         if (state.theme) {
-          useSettingsStore.getState().setTheme(state.theme as 'light' | 'dark');
+          useSettingsStore.getState().setTheme(state.theme);
         }
         if (state.language) {
           useSettingsStore.getState().setLanguage(state.language as 'en' | 'zh');

@@ -4,6 +4,7 @@ import AppLayout from './components/layout/AppLayout';
 import { useSettingsStore } from './stores/settingsStore';
 import { useI18n } from './i18n';
 import { usePersistence } from './hooks/usePersistence';
+import { isDarkTheme } from './themes';
 
 export default function App() {
   const appTheme = useSettingsStore((s) => s.theme);
@@ -24,7 +25,7 @@ export default function App() {
     <ConfigProvider
       theme={{
         algorithm:
-          appTheme === 'dark' ? theme.darkAlgorithm : theme.defaultAlgorithm,
+          isDarkTheme(appTheme) ? theme.darkAlgorithm : theme.defaultAlgorithm,
       }}
     >
       <AntApp>

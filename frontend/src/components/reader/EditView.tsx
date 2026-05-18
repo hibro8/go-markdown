@@ -7,6 +7,7 @@ import { CloseOutlined, SaveOutlined, CheckCircleOutlined, LoadingOutlined } fro
 import MarkdownPreview from '../preview/MarkdownPreview';
 import MarkdownToolbar from './MarkdownToolbar';
 import { MarkdownService, FileService, DBService } from '../../services/api';
+import { isDarkTheme } from '../../themes';
 import type { editor } from 'monaco-editor';
 
 const MonacoEditor = lazy(() => import('@monaco-editor/react'));
@@ -272,7 +273,7 @@ export default function EditView() {
             <MonacoEditor
               height="100%"
               language="markdown"
-              theme={appTheme === 'dark' ? 'vs-dark' : 'vs'}
+              theme={isDarkTheme(appTheme) ? 'vs-dark' : 'vs'}
               value={content}
               onChange={handleChange}
               onMount={handleEditorMount}
